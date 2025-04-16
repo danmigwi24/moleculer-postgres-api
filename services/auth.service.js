@@ -8,42 +8,60 @@ const Sequelize = require("sequelize");
 
 const EncryptionMixin = require("../mixins/encryption.mixin");
 const { logger } = require('sequelize/lib/utils/logger');
-//
-const UserModel = require("../models/user.model");
-
-
-// Create the Sequelize instance first
-const sequelize = new Sequelize(
-    process.env.DB_URL || 'postgres://postgres:dkimani24@localhost:5444/moleculer_db',
-    {
-        dialect: 'postgres',
-        schema: 'public',
-        logging: false
-    }
-);
-
-// Then create the model using that instance
-const model = UserModel(sequelize);
-
 
 module.exports = {
-    name: "users",
+    name: "auth",
 
     mixins: [
         DbService,
         EncryptionMixin
     ],
-    // Use the sequelize instance in the adapter
-    adapter: new SequelizeAdapter(sequelize),
 
-    // Use the initialized model
-    model: model,
+    //adapter: null, // Will be created in the created() hook
+    adapter: new SequelizeAdapter(
+        process.env.DB_URL || 'postgres://postgres:dkimani24@localhost:5444/moleculer_db', 
+        {
+            dialect: 'postgres',
+            schema: 'public',
+            logging: false // Disable SQL logging (optional)
+        }
+    ),
+    
 
-
-    // These will be set in the created() hook
-    //adapter: null,
-    //model: null,
-    member: null,
+    //model: null, // Will be set in the created() hook
+    model: {
+        name: "user",
+        define: {
+            id: {
+                type: Sequelize.UUID,
+                defaultValue: Sequelize.UUIDV4,
+                primaryKey: true
+            },
+            username: {
+                type: Sequelize.STRING,
+                unique: true,
+                allowNull: false
+            },
+            email: {
+                type: Sequelize.STRING,
+                unique: true,
+                allowNull: false,
+                validate: {
+                    isEmail: true
+                }
+            },
+            password: {
+                type: Sequelize.STRING,
+                allowNull: false
+            }
+        },
+        options: {
+            timestamps: true,
+            underscored: false,
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        }
+    },
 
     settings: {
         fields: ["id", "username", "email", "active", "role", "createdAt", "updatedAt"],
@@ -91,27 +109,27 @@ module.exports = {
                 const { username, email, password } = ctx.params;
 
                 // Check if user already exists
-
-                const exists = await this.adapter.findOne({
+                
+                 const exists = await this.adapter.findOne({
                     where: { email },
                     raw: false
                 });
-
-
+               
+    
 
                 if (exists) {
                     throw new MoleculerClientError("Username or email already exists", 422, "ALREADY_EXISTS");
                 }
 
                 const hashedPassword = await this.hashPassword(password);
-
+                 
                 // Create new user
                 return this.adapter.insert({
                     username,
                     email,
                     password: hashedPassword
                 });
-
+               
 
             }
         },
@@ -209,22 +227,19 @@ module.exports = {
         }
     },
 
+    
     created() {
-        
-        const dbService = this.broker.getLocalService("db");
-        if (!dbService) {
-            throw new Error("DB service not found");
-        }
-        this.logger.info(`DB service found ${dbService.settings.dk}`)
-        this.logger.info(`DB service found ${dbService.settings.sequelize}`)
-
-        this.member = UserModel(dbService.settings.sequelize);
-        //
-        //this.model = UserModel(dbService.settings.sequelize);
-       //this.adapter =  new SequelizeAdapter(sequelize)
+      // Get reference to DB service
+      //const dbService = this.broker.getLocalService("db");
+      
+      // Set sequelize model
+      //this.model = dbService.models.User;
+      
+      // Create adapter
+      //this.adapter = new SqlAdapter(dbService.sequelize, dbService.models.User);
     },
 
     started() {
-        this.logger.info(`***************************** - DB_URL ${process.env.DB_URL}`)
+        this.logger.info(`process.env.DB_URL ${process.env.DB_URL}`)
     }
 };

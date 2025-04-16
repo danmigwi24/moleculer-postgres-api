@@ -22,6 +22,7 @@ const broker = new ServiceBroker({
 });
 
 // Add this to your broker.js after service loading
+/*
 broker.start().then(async () => {
   try {
       const res = await broker.call("user.create", {
@@ -34,9 +35,11 @@ broker.start().then(async () => {
       console.error("Error:", err);
   }
 });
-
+*/
 // Load services
-broker.loadServices("./services");
+//broker.loadServices("./services");
+// Load services
+broker.loadServices("./services", "**/*.service.js");
 
 // Start broker
 broker.start()

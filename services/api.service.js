@@ -39,7 +39,12 @@ module.exports = {
           "POST /users/register": "users.register",
           "POST /users/login": "users.login",
           "GET /users/:id": "users.get",
-          "PUT /users/:id/password": "users.changePassword"
+          "PUT /users/:id/password": "users.changePassword",
+          //
+          "POST /auth/register": "auth.register",
+          "POST /auth/login": "auth.login",
+          "GET /auth/:id": "auth.get",
+          "PUT /auth/:id/password": "auth.changePassword"
         },
         
         // Handle errors
